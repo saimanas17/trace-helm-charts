@@ -1,0 +1,20 @@
+letsencryptserver: ENC[AES256_GCM,data:2tB00Ip1UT2kewxw8k/cT/n8NSF3RpTmOdqw1936Iq8wkOtaywfl0U2wpnUSRg==,iv:5mpf7iTjZxv23nQSGOGmETN46VbGN76d3EXzCLjwIL0=,tag:4+klXfNl1jG8gs4gREVRCg==,type:str]
+letsencryptemail: ENC[AES256_GCM,data:aMXzq6Mm7qBOtU73XpiKYIbty4uVNsCLk/VWUQ==,iv:3yJD4JotHQW5bG3bB0b3/RKlWZDJ3+mNd0sywiMZHBE=,tag:kQ9Yq4bEAUZ6kLsn/LfmGA==,type:str]
+namespace: ENC[AES256_GCM,data:Bae9RHhvKpIOFQO5,iv:GFj2omLDWPB+TLn9SVVetFUzyuXtTCLqf3XJ1ATgEkE=,tag:jaI/Pf9m1NaQ+KfoN+VfDA==,type:str]
+certmanagertype: ENC[AES256_GCM,data:aU//adXbFXyyjzcdo1CRgFROvZ/HHw==,iv:Xf+J/6Qaa5PGLU7C/cGNliUxsapBykxMZXPQI2xnrI0=,tag:+1oFMFfL3I9hJ/NElR7AaQ==,type:str]
+hostname: ENC[AES256_GCM,data:MhQpnspefi5BPG3wLKLInrqO00RSNpwmaLiIFeM=,iv:MPq5Pj0hP3h64JfZoDlkq0UGrTBHEyt7dLwpoS69Um8=,tag:uOeMck8cWp82tPG4cEsWCg==,type:str]
+hostnametrace: ENC[AES256_GCM,data:kFSpP0f5QzK6gsH3gxJMeRpxurlHwhl3xRyvVrGsVA==,iv:mwlkTD0NieFOCAtkO5qsRjTZn6c3jz0n9lWcEEKSFFY=,tag:8T4FeM4FhpAl25PD6b5bPQ==,type:str]
+sops:
+    kms: []
+    gcp_kms:
+        - resource_id: projects/csye7125-prd/locations/global/keyRings/sops-key/cryptoKeys/sops-key
+          created_at: "2025-04-19T15:31:43Z"
+          enc: CiQAly6HlgzL7o6T8SbOiO6P6y7OC8Lo4Q4o/RghxrH2KOVvRo8SSQCbzmwTyn8v+fd/hYX4fNdzAvXDSyLagNRkyzUoup+gLsV5AVt0BEGVnHIPyuzgswmRcVBIe+plsocoHSrJAzXSNbJL5so+DmU=
+    azure_kv: []
+    hc_vault: []
+    age: []
+    lastmodified: "2025-04-19T15:31:43Z"
+    mac: ENC[AES256_GCM,data:iKY9KJtPS8dfKSuVtx0O7XI07VpGqn1kFBxH7b71H+JbORFR+EJRCgq8DIb/rsv1dwo8Sm7M/S597jDQPGCS6FMwzC6275y5sF0cIE//qKU/w5va621f466A3EIh0JtZ4c1acCf3cDeW77BJsGh6Jw0UEL4jcTQYm7JRkVawdRo=,iv:FZ74+ziCH3v626jZM23JNItniv31qE0H3nxtsZJ/JiA=,tag:0YaQUmaBUH++iu7xUVU3Xw==,type:str]
+    pgp: []
+    unencrypted_suffix: _unencrypted
+    version: 3.9.3

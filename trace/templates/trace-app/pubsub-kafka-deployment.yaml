@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pubsub-to-kafka
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.pubsub.replicas }}
+  selector:
+    matchLabels:
+      app: pubsub-to-kafka
+  template:
+    metadata:
+      labels:
+        app: pubsub-to-kafka
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                      - a
+                      - b
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                      - a
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                      - c
+              topologyKey: "kubernetes.io/hostname"
+      imagePullSecrets:
+        - name: dockerhub-secret
+      serviceAccountName: trace-sa
+      containers:
+        - name: pubsub-to-kafka
+          image: {{ .Values.pubsub.image }}
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "pgrep -f pubsub_to_kafka.py"
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "pgrep -f pubsub_to_kafka.py"
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          env:
+            - name: PROJECT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: PROJECT_ID
+            - name: SUBSCRIPTION_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: GCS_SUBSCRIPTION
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+            - name: KAFKA_TOPIC
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: KAFKA_TOPIC_NAME

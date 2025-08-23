@@ -1,0 +1,161 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.kafka.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.kafka.name }}
+    {{- if .Values.kafka.labels }}
+    {{- toYaml .Values.kafka.labels | nindent 4 }}
+    {{- end }}
+spec:
+  serviceName: {{ .Values.kafka.name }}-headless
+  replicas: {{ .Values.kafka.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.kafka.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.kafka.name }}
+        {{- if .Values.kafka.podLabels }}
+        {{- toYaml .Values.kafka.podLabels | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- if .Values.kafka.affinity.enabled }}
+      affinity:
+        {{- if .Values.kafka.affinity.nodeAffinity.enabled }}
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            {{- range .Values.kafka.affinity.nodeAffinity.nodeSelectorTerms }}
+            - matchExpressions:
+              {{- range .matchExpressions }}
+              - key: {{ .key }}
+                operator: {{ .operator }}
+                values:
+                {{- range .values }}
+                - {{ . }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+        {{- end }}
+        {{- if .Values.kafka.affinity.podAntiAffinity.enabled }}
+        podAntiAffinity:
+          {{- if .Values.kafka.affinity.podAntiAffinity.required }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+          {{- range .Values.kafka.affinity.podAntiAffinity.required }}
+          - labelSelector:
+              matchExpressions:
+              {{- range .matchExpressions }}
+              - key: {{ .key }}
+                operator: {{ .operator }}
+                values:
+                {{- range .values }}
+                - {{ . }}
+                {{- end }}
+              {{- end }}
+            topologyKey: {{ .topologyKey }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.kafka.affinity.podAntiAffinity.preferred }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+          {{- range .Values.kafka.affinity.podAntiAffinity.preferred }}
+          - weight: {{ .weight }}
+            podAffinityTerm:
+              labelSelector:
+                {{- if .matchLabels }}
+                matchLabels:
+                  {{- toYaml .matchLabels | nindent 18 }}
+                {{- end }}
+                {{- if .matchExpressions }}
+                matchExpressions:
+                {{- range .matchExpressions }}
+                - key: {{ .key }}
+                  operator: {{ .operator }}
+                  values:
+                  {{- range .values }}
+                  - {{ . }}
+                  {{- end }}
+                {{- end }}
+                {{- end }}
+              topologyKey: {{ .topologyKey }}
+          {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.kafka.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.kafka.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.kafka.tolerations }}
+      tolerations:
+        {{- toYaml .Values.kafka.tolerations | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ .Values.kafka.name }}
+        image: "{{ .Values.kafka.image.repository }}:{{ .Values.kafka.image.tag }}"
+        imagePullPolicy: {{ .Values.kafka.image.pullPolicy }}
+        command:
+        - /bin/bash
+        - -c
+        - |
+          # Generate cluster ID
+          export CLUSTER_ID=$(kafka-storage random-uuid)
+          echo "Kafka Cluster ID: $CLUSTER_ID"
+          
+          # Format storage
+          kafka-storage format -t $CLUSTER_ID -c /etc/kafka/server.properties
+          
+          # Start Kafka
+          exec kafka-server-start /etc/kafka/server.properties
+        ports:
+        - containerPort: {{ .Values.kafka.service.brokerPort }}
+          name: broker
+        - containerPort: {{ .Values.kafka.service.controllerPort }}
+          name: controller
+        env:
+        {{- range .Values.kafka.env }}
+        - name: {{ .name }}
+          value: {{ .value | quote }}
+        {{- end }}
+        volumeMounts:
+        - name: data
+          mountPath: {{ .Values.kafka.persistence.mountPath }}
+        - name: config
+          mountPath: /etc/kafka/server.properties
+          subPath: server.properties
+        {{- if .Values.kafka.extraVolumeMounts }}
+        {{- toYaml .Values.kafka.extraVolumeMounts | nindent 8 }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.kafka.resources | nindent 10 }}
+      {{- if .Values.exporter.enabled }}
+      - name: kafka-exporter
+        image: "{{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}"
+        imagePullPolicy: {{ .Values.exporter.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.exporter.port }}
+          name: metrics
+        args:
+        {{- range .Values.exporter.args }}
+        - {{ . }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.exporter.resources | nindent 10 }}
+      {{- end }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Values.kafka.name }}-config
+      - name: data
+        {{- if .Values.kafka.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ .Values.kafka.persistence.existingClaim | default (printf "%s-data" .Values.kafka.name) }}
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      {{- if .Values.kafka.extraVolumes }}
+      {{- toYaml .Values.kafka.extraVolumes | nindent 6 }}
+      {{- end }}

@@ -1,0 +1,13 @@
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: external-secrets
+  namespace: {{ .Values.namespace_es }}  # Replace with the actual namespace
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-secrets  # Verify this matches your ESO deployment
+  endpoints:
+  - port: 8080  # External Secrets exposes metrics on port 8080
+    interval: 30s
+    path: /metrics

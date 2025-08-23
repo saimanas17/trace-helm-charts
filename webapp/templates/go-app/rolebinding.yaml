@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: go-app-rolebinding
+  namespace: {{ .Values.namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: sm-sa  
+    namespace: {{ .Values.namespace }}
+roleRef:
+  kind: Role
+  name: go-app-role
+  apiGroup: rbac.authorization.k8s.io

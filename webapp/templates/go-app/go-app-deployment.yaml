@@ -1,0 +1,147 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-webapp
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.goApp.replicaCount }}
+  selector:
+    matchLabels:
+      app: go-webapp
+  template:
+    metadata:
+      labels:
+        app: go-webapp
+    spec:
+      serviceAccountName: sm-sa
+      imagePullSecrets:
+        - name: dockerhub-secret
+      initContainers:
+        - name: liquibase-init
+          image: {{ .Values.goApp.initImage }}
+          command:
+            [
+              "sh",
+              "-c",
+              "liquibase --url=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME} --username=${DB_USERNAME} --password=${DB_PASSWORD} --changeLogFile=changelog.yaml --logLevel=INFO update",
+            ]
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: go-app-secret
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: go-app-secret
+                  key: DB_PORT
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: go-app-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: password-secret
+                  key: DB_PASSWORD
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: go-app-secret
+                  key: DB_NAME
+      containers:
+        - name: go-webapp
+          image: {{ .Values.goApp.image }}
+          ports:
+            - containerPort: {{ .Values.goApp.targetPort }}
+          env:
+            - name: SERVICE_NAME
+              value: {{ .Values.service.name }}
+            - name: SERVICE_VERSION
+              value: {{ .Values.service.version }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.otel.endpoint }}
+            - name: OTEL_INSECURE
+              value: "true"
+            - name: GOOGLE_CLOUD_PROJECT
+              value: {{ .Values.project_id }}
+            - name: GCS_BUCKET_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: go-app-secret
+                  key: GCS_BUCKET_NAME
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: go-app-secret
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: go-app-secret
+                  key: DB_PORT
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: go-app-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: password-secret
+                  key: DB_PASSWORD
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: go-app-secret
+                  key: DB_NAME
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.goApp.targetPort }}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.goApp.targetPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                      - a
+                      - b
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                      - a
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                    - c
+              topologyKey: "kubernetes.io/hostname"

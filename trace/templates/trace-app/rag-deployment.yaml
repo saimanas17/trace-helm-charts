@@ -1,0 +1,175 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-api
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.processor.replicas }}
+  selector:
+    matchLabels:
+      app: rag-api
+  template:
+    metadata:
+      labels:
+        app: rag-api
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                      - a
+                      - b
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                      - a
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                      - c
+              topologyKey: "kubernetes.io/hostname"
+      imagePullSecrets:
+        - name: dockerhub-secret
+      initContainers:
+      - name: db-init
+        image: {{ .Values.processor.initimage }}
+        command:
+            [
+              "sh",
+              "-c",
+              "liquibase --url=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME} --username=${DB_USERNAME} --password=${DB_PASSWORD} --changeLogFile=changelog.yaml --logLevel=INFO update",
+            ]
+        env:
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: DB_NAME
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: DB_USER
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: DB_PORT
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: password-secret
+                  key: DB_PASSWORD
+      containers:
+      - name: rag-api
+        image: {{ .Values.processor.image }}
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - "pgrep -f rag_api.py"
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - "pgrep -f rag_api.py"
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        ports:
+        - containerPort: 8000
+        env:
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: DB_USER
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: DB_PORT
+            - name: PINECONE_ENVIRONMENT
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: PINECONE_ENVIRONMENT
+            - name: PINECONE_INDEX
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: PINECONE_INDEX
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+            - name: KAFKA_TOPIC_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: KAFKA_TOPIC_NAME
+            - name: LOCAL_PDF_DIR
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: LOCAL_PDF_DIR
+            - name: KAFKA_GROUP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-config
+                  key: KAFKA_GROUP_ID
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: password-secret
+                  key: DB_PASSWORD
+            - name: PINECONE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pinecone-key
+                  key: PINECONE_KEY
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openapi-key
+                  key: OPENAPI_KEY

@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.otelCollector.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.otelCollector.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.otelCollector.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.otelCollector.name }}
+    spec:
+      serviceAccountName: {{ .Values.otelCollector.serviceAccount }}
+      containers:
+      - name: otel-collector
+        image: {{ .Values.otelCollector.image.repository }}:{{ .Values.otelCollector.image.tag }}
+        imagePullPolicy: {{ .Values.otelCollector.image.pullPolicy }}
+        args:
+        - --config=/conf/{{ .Values.otelCollector.configMap.configFile }}
+        ports:
+        - containerPort: {{ .Values.otelCollector.ports.grpc }}
+          name: otlp-grpc
+        - containerPort: {{ .Values.otelCollector.ports.http }}
+          name: otlp-http
+        - containerPort: 8889
+          name: prometheus
+        - containerPort: 8888
+          name: telemetry
+        volumeMounts:
+        - name: otel-collector-config-vol
+          mountPath: /conf
+        resources:
+          limits:
+            cpu: {{ .Values.otelCollector.resources.limits.cpu }}
+            memory: {{ .Values.otelCollector.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.otelCollector.resources.requests.cpu }}
+            memory: {{ .Values.otelCollector.resources.requests.memory }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            {{- with index .Values.otelCollector.affinity.nodeAffinity.required.nodeSelectorTerms 0 }}
+              - matchExpressions:
+                {{- with index .matchExpressions 0 }}
+                  - key: {{ .key }}
+                    operator: In
+                    values:
+                    {{- range .values }}
+                      - {{ . }}
+                    {{- end }}
+                {{- end }}
+            {{- end }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: {{ .Values.otelCollector.affinity.nodeAffinity.preferred.weight }}
+              preference:
+                matchExpressions:
+                {{- with index .Values.otelCollector.affinity.nodeAffinity.preferred.matchExpressions 0 }}
+                  - key: {{ .key }}
+                    operator: In
+                    values:
+                    {{- range .values }}
+                      - {{ . }}
+                    {{- end }}
+                {{- end }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                {{- with index .Values.otelCollector.affinity.podAntiAffinity.required.labelSelector.matchExpressions 0 }}
+                  - key: {{ .key }}
+                    operator: In
+                    values:
+                    {{- range .values }}
+                    - {{ . }}
+                    {{- end }}
+                {{- end }}
+              topologyKey: {{ .Values.otelCollector.affinity.podAntiAffinity.required.topologyKey }}
+      volumes:
+      - name: otel-collector-config-vol
+        configMap:
+          name: {{ .Values.otelCollector.configMap.name }}
+          items:
+            - key: {{ .Values.otelCollector.configMap.configFile }}
+              path: {{ .Values.otelCollector.configMap.configFile }}

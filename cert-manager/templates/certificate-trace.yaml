@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: trace-cert
+  namespace: {{ .Values.namespace }}
+spec:
+  secretName: trace-ssl
+  issuerRef:
+    name:  {{ .Values.certmanagertype }}
+    kind: ClusterIssuer
+    group: cert-manager.io
+  commonName: {{ .Values.hostnametrace }}
+  dnsNames:
+    - {{ .Values.hostnametrace }}

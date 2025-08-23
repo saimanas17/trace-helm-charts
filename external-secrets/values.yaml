@@ -1,0 +1,22 @@
+clusterLocation: ENC[AES256_GCM,data:GgM6fnXp5FM=,iv:7dkUdu5x3rmNKw4kLaEVdWqK8XkUSCKWH6p/X0T0TZA=,tag:/+a/mozhuBJzOBeqy31XMA==,type:str]
+clusterName: ENC[AES256_GCM,data:26GN09HR1o4/FQ==,iv:ZJ+Rs3xJEYm+6nEFLBT+MAkeQhMtTbSXpn1+wVN6zDM=,tag:sqJm4QGaNRetlXA25np6DQ==,type:str]
+serviceAccountName: ENC[AES256_GCM,data:j3MIhzk=,iv:GGGPKRbRMqPRgpouCrT9Y8xqi32GN4YMtAtcmP+YdPk=,tag:aJ2SPv8dZNod8VNr1wFqrw==,type:str]
+serviceAccountName_trace: ENC[AES256_GCM,data:iqW5gXEE5tk=,iv:9UphtWPYHoGR6f5Zw6QQQfCtDb90tzMRVDLAXiap6as=,tag:M1dsXNn2WnmdxEe3cw+X4A==,type:str]
+namespace: ENC[AES256_GCM,data:LJbCtOyW,iv:YeuRixLOZ7aLw/yPeLv80nv6/O82XlZXeBa5RzGbIJ4=,tag:RYu9P+E0R90TI1czmyBxLQ==,type:str]
+namespace_es: ENC[AES256_GCM,data:/WNhfh01cTmP7fUoerUC+Q==,iv:h+sidW+B4l86Yd5vWHd5w9Y1E+NcvXuEj0jJvHPo/0g=,tag:nbclYa54IEx6KuhKV6bZng==,type:str]
+project_id: ENC[AES256_GCM,data:CR9q4tVWbnU0zPXj,iv:rh3h/jT35A2+T5vFXWGFE/Oi3Ie7k0EoOrsoEyhl2f8=,tag:jHLEidoVc2ul2G+Uia2Kxw==,type:str]
+namespace_trace: ENC[AES256_GCM,data:tNE1m54=,iv:uXq0L9Dv1iLB74TZ/eyx0/lsccT14wxzHjsQRvLV22Y=,tag:04mMhAom8snzLdi5cOBO4w==,type:str]
+sops:
+    kms: []
+    gcp_kms:
+        - resource_id: projects/csye7125-prd/locations/global/keyRings/sops-key/cryptoKeys/sops-key
+          created_at: "2025-04-19T15:31:43Z"
+          enc: CiQAly6HljhkqLqNJzdEJhSLQFaOOGq8LUsvX2F0PTY2cofxsdgSSACbzmwTVn9//9xlNHShxMk8EnJHVK5+JSHzlWw/nLhT4I8HeGTMCxq/AiI1gsuVI2KklnfsO4eyEabD43JXuQ6g+Y8CzrLIFw==
+    azure_kv: []
+    hc_vault: []
+    age: []
+    lastmodified: "2025-04-19T15:31:43Z"
+    mac: ENC[AES256_GCM,data:JCnC6mtbn552S2q9ZyWDBPM/NprrHT8pczT2wr38LvFaqzLyaDDf+9IBg/GZVcaMUXn8GkS41IzOqf0WqAj4CH6EI7gxWnQ61Dt+2KwKw004ofNnx/6bCFgWsgXHlG9DEzC7ay/dHo6JRbN6h+ZwXPzAPhQ2yaq3L8o3YmfnnKs=,iv:SdwK/NOdUYgJZ8GS3sz2pn5okCWhUrA4pU6CLsc1US8=,tag:7nDGDsT9xbZ3ryDNwPUXzA==,type:str]
+    pgp: []
+    unencrypted_suffix: _unencrypted
+    version: 3.9.3
